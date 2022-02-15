@@ -54,9 +54,9 @@ export function generateService(
     let inputType = requestType(ctx, methodDesc);
     // the grpc-web clients auto-`fromPartial` the input before handing off to grpc-web's
     // serde runtime, so it's okay to accept partial results from the client
-    if (options.outputClientImpl === 'grpc-web') {
-      inputType = code`${utils.DeepPartial}<${inputType}>`;
-    }
+    // if (options.outputClientImpl === 'grpc-web') {
+    inputType = code`${utils.DeepPartial}<${inputType}>`;
+    // }
     params.push(code`request: ${inputType}`);
 
     // Use metadata as last argument for interface only configuration
@@ -103,16 +103,18 @@ function generateRegularRpcMethod(
   methodDesc: MethodDescriptorProto
 ): Code {
   assertInstanceOf(methodDesc, FormattedMethodDescriptor);
-  const { options } = ctx;
+  const { options, utils } = ctx;
   const Reader = imp('Reader@protobufjs/minimal');
   const rawInputType = rawRequestType(ctx, methodDesc);
   const inputType = requestType(ctx, methodDesc);
   const outputType = responseType(ctx, methodDesc);
+  const partialInputType = code`${utils.DeepPartial}<${inputType}>`;
 
-  const params = [...(options.context ? [code`ctx: Context`] : []), code`request: ${inputType}`];
+  const params = [...(options.context ? [code`ctx: Context`] : []), code`request: ${partialInputType}`];
   const maybeCtx = options.context ? 'ctx,' : '';
 
-  let encode = code`${rawInputType}.encode(request).finish()`;
+  let fromPartial = code`${rawInputType}.fromPartial(request)`;
+  let encode = code`${rawInputType}.encode(fromPartial).finish()`;
   let decode = code`data => ${outputType}.decode(new ${Reader}(data))`;
 
   if (methodDesc.clientStreaming) {
@@ -142,6 +144,7 @@ function generateRegularRpcMethod(
     ${methodDesc.formattedName}(
       ${joinCode(params, { on: ',' })}
     ): ${responsePromiseOrObservable(ctx, methodDesc)} {
+      const fromPartial = ${fromPartial};
       const data = ${encode};
       const ${returnVariable} = this.rpc.${rpcMethod}(
         ${maybeCtx}
@@ -266,7 +269,8 @@ function generateCachingRpcMethod(
   const lambda = code`
     (requests) => {
       const responses = requests.map(async request => {
-        const data = ${inputType}.encode(request).finish()
+        const fromPartial = ${inputType}.fromPartial();
+        const data = ${inputType}.encode(fromPartial).finish()
         const response = await this.rpc.request(ctx, "${maybePrefixPackage(fileDesc, serviceDesc.name)}", "${
     methodDesc.name
   }", data);
