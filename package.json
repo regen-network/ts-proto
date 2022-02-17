@@ -1,9 +1,9 @@
 {
-  "name": "ts-proto",
+  "name": "@regen-network/ts-proto",
   "version": "1.105.1",
   "description": "",
   "main": "build/plugin.js",
-  "repository": "github:stephenh/ts-proto",
+  "repository": "https://github.com/regen-network/ts-proto",
   "bin": {
     "protoc-gen-ts_proto": "./protoc-gen-ts_proto"
   },
