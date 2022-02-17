@@ -1,6 +1,6 @@
 {
   "name": "@regen-network/ts-proto",
-  "version": "1.105.1",
+  "version": "1.105.2-0",
   "description": "",
   "main": "build/plugin.js",
   "repository": "https://github.com/regen-network/ts-proto",
