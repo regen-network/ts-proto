@@ -1,6 +1,6 @@
 {
   "name": "@regen-network/ts-proto",
-  "version": "1.105.2-0",
+  "version": "1.105.2-1",
   "description": "",
   "main": "build/plugin.js",
   "repository": "https://github.com/regen-network/ts-proto",
@@ -25,7 +25,8 @@
     "watch": "ts-node integration/watch.ts"
   },
   "files": [
-    "build"
+    "build",
+    "protoc-gen-ts_proto"
   ],
   "keywords": [],
   "author": "",
