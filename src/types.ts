@@ -9,14 +9,14 @@ import {
   MessageOptions,
   MethodDescriptorProto,
   ServiceDescriptorProto,
-} from 'ts-proto-descriptors';
-import { code, Code, imp, Import } from 'ts-poet';
-import { DateOption, EnvOption, LongOption, OneofOption, Options } from './options';
-import { visit } from './visit';
-import { fail, FormattedMethodDescriptor, impProto, maybePrefixPackage } from './utils';
-import SourceInfo from './sourceInfo';
-import { camelCase } from './case';
-import { Context } from './context';
+} from "ts-proto-descriptors";
+import { code, Code, imp, Import } from "ts-poet";
+import { DateOption, EnvOption, LongOption, OneofOption, Options } from "./options";
+import { visit } from "./visit";
+import { fail, FormattedMethodDescriptor, impProto, maybePrefixPackage } from "./utils";
+import SourceInfo from "./sourceInfo";
+import { camelCase } from "./case";
+import { Context } from "./context";
 
 /** Based on https://github.com/dcodeIO/protobuf.js/blob/master/src/types.js#L37. */
 export function basicWireType(type: FieldDescriptorProto_Type): number {
@@ -46,7 +46,7 @@ export function basicWireType(type: FieldDescriptorProto_Type): number {
     case FieldDescriptorProto_Type.TYPE_BYTES:
       return 2;
     default:
-      throw new Error('Invalid type ' + type);
+      throw new Error("Invalid type " + type);
   }
 }
 
@@ -109,36 +109,36 @@ export function basicTypeName(
 export function toReaderCall(field: FieldDescriptorProto): string {
   switch (field.type) {
     case FieldDescriptorProto_Type.TYPE_DOUBLE:
-      return 'double';
+      return "double";
     case FieldDescriptorProto_Type.TYPE_FLOAT:
-      return 'float';
+      return "float";
     case FieldDescriptorProto_Type.TYPE_INT32:
     case FieldDescriptorProto_Type.TYPE_ENUM:
-      return 'int32';
+      return "int32";
     case FieldDescriptorProto_Type.TYPE_UINT32:
-      return 'uint32';
+      return "uint32";
     case FieldDescriptorProto_Type.TYPE_SINT32:
-      return 'sint32';
+      return "sint32";
     case FieldDescriptorProto_Type.TYPE_FIXED32:
-      return 'fixed32';
+      return "fixed32";
     case FieldDescriptorProto_Type.TYPE_SFIXED32:
-      return 'sfixed32';
+      return "sfixed32";
     case FieldDescriptorProto_Type.TYPE_INT64:
-      return 'int64';
+      return "int64";
     case FieldDescriptorProto_Type.TYPE_UINT64:
-      return 'uint64';
+      return "uint64";
     case FieldDescriptorProto_Type.TYPE_SINT64:
-      return 'sint64';
+      return "sint64";
     case FieldDescriptorProto_Type.TYPE_FIXED64:
-      return 'fixed64';
+      return "fixed64";
     case FieldDescriptorProto_Type.TYPE_SFIXED64:
-      return 'sfixed64';
+      return "sfixed64";
     case FieldDescriptorProto_Type.TYPE_BOOL:
-      return 'bool';
+      return "bool";
     case FieldDescriptorProto_Type.TYPE_STRING:
-      return 'string';
+      return "string";
     case FieldDescriptorProto_Type.TYPE_BYTES:
-      return 'bytes';
+      return "bytes";
     default:
       throw new Error(`Not a primitive field ${field}`);
   }
@@ -202,6 +202,8 @@ export function defaultValue(ctx: Context, field: FieldDescriptorProto): any {
         return code`${utils.Long}.UZERO`;
       } else if (options.forceLong === LongOption.STRING) {
         return '"0"';
+      } else if (options.forceLong === LongOption.BIGINT) {
+        return 'BigInt("0")';
       } else {
         return 0;
       }
@@ -212,6 +214,8 @@ export function defaultValue(ctx: Context, field: FieldDescriptorProto): any {
         return code`${utils.Long}.ZERO`;
       } else if (options.forceLong === LongOption.STRING) {
         return '"0"';
+      } else if (options.forceLong === LongOption.BIGINT) {
+        return 'BigInt("0")';
       } else {
         return 0;
       }
@@ -221,13 +225,13 @@ export function defaultValue(ctx: Context, field: FieldDescriptorProto): any {
       return '""';
     case FieldDescriptorProto_Type.TYPE_BYTES:
       if (options.env === EnvOption.NODE) {
-        return 'Buffer.alloc(0)';
+        return "Buffer.alloc(0)";
       } else {
-        return 'new Uint8Array()';
+        return "new Uint8Array()";
       }
     case FieldDescriptorProto_Type.TYPE_MESSAGE:
     default:
-      return 'undefined';
+      return "undefined";
   }
 }
 
@@ -240,7 +244,7 @@ export function notDefaultCheck(
 ): Code {
   const { typeMap, options } = ctx;
   const isOptional = isOptionalProperty(field, messageOptions, options);
-  const maybeNotUndefinedAnd = isOptional ? `${place} !== undefined && ` : '';
+  const maybeNotUndefinedAnd = isOptional ? `${place} !== undefined && ` : "";
   switch (field.type) {
     case FieldDescriptorProto_Type.TYPE_DOUBLE:
     case FieldDescriptorProto_Type.TYPE_FLOAT:
@@ -272,6 +276,8 @@ export function notDefaultCheck(
         return code`${maybeNotUndefinedAnd} !${place}.isZero()`;
       } else if (options.forceLong === LongOption.STRING) {
         return code`${maybeNotUndefinedAnd} ${place} !== "0"`;
+      } else if (options.forceLong === LongOption.BIGINT) {
+        return code`${maybeNotUndefinedAnd} ${place} !== BigInt("0")`;
       } else {
         return code`${maybeNotUndefinedAnd} ${place} !== 0`;
       }
@@ -282,7 +288,7 @@ export function notDefaultCheck(
     case FieldDescriptorProto_Type.TYPE_BYTES:
       return code`${maybeNotUndefinedAnd} ${place}.length !== 0`;
     default:
-      throw new Error('Not implemented for the given type.');
+      throw new Error("Not implemented for the given type.");
   }
 }
 
@@ -294,7 +300,7 @@ export function createTypeMap(request: CodeGeneratorRequest, options: Options): 
   const typeMap: TypeMap = new Map();
   for (const file of request.protoFile) {
     // We assume a file.name of google/protobuf/wrappers.proto --> a module path of google/protobuf/wrapper.ts
-    const moduleName = file.name.replace('.proto', '');
+    const moduleName = file.name.replace(".proto", "");
     // So given a fullName like FooMessage_InnerMessage, proto will see that as package.name.FooMessage.InnerMessage
     function saveMapping(
       tsFullName: string,
@@ -303,7 +309,7 @@ export function createTypeMap(request: CodeGeneratorRequest, options: Options): 
       protoFullName: string
     ): void {
       // package is optional, but make sure we have a dot-prefixed type name either way
-      const prefix = file.package.length === 0 ? '' : `.${file.package}`;
+      const prefix = file.package.length === 0 ? "" : `.${file.package}`;
       typeMap.set(`${prefix}.${protoFullName}`, [moduleName, tsFullName, desc]);
     }
     visit(file, SourceInfo.empty(), saveMapping, options, saveMapping);
@@ -337,17 +343,20 @@ export function isScalar(field: FieldDescriptorProto): boolean {
 // properties. When useOptionals='all', all fields are translated into
 // optional properties, with the exception of map Entry key/values, which must
 // always be present.
+// OneOf fields are always optional, whenever oneof=unions option not in use.
 export function isOptionalProperty(
   field: FieldDescriptorProto,
   messageOptions: MessageOptions | undefined,
   options: Options
 ): boolean {
   const optionalMessages =
-    options.useOptionals === true || options.useOptionals === 'messages' || options.useOptionals === 'all';
-  const optionalAll = options.useOptionals === 'all';
+    options.useOptionals === true || options.useOptionals === "messages" || options.useOptionals === "all";
+  const optionalAll = options.useOptionals === "all";
   return (
     (optionalMessages && isMessage(field) && !isRepeated(field)) ||
     (optionalAll && !messageOptions?.mapEntry) ||
+    // don't bother verifying that oneof is not union. union oneofs generate their own properties.
+    isWithinOneOf(field) ||
     field.proto3Optional
   );
 }
@@ -370,7 +379,7 @@ export function isEnum(field: FieldDescriptorProto): boolean {
 }
 
 export function isWithinOneOf(field: FieldDescriptorProto): boolean {
-  return field.hasOwnProperty('oneofIndex');
+  return field.hasOwnProperty("oneofIndex");
 }
 
 export function isWithinOneOfThatShouldBeUnion(options: Options, field: FieldDescriptorProto): boolean {
@@ -406,11 +415,11 @@ export function isMapType(ctx: Context, messageDesc: DescriptorProto, field: Fie
 
 export function isObjectId(field: FieldDescriptorProto): boolean {
   // need to use endsWith instead of === because objectid could be imported from an external proto file
-  return field.typeName.endsWith('.ObjectId');
+  return field.typeName.endsWith(".ObjectId");
 }
 
 export function isTimestamp(field: FieldDescriptorProto): boolean {
-  return field.typeName === '.google.protobuf.Timestamp';
+  return field.typeName === ".google.protobuf.Timestamp";
 }
 
 export function isValueType(ctx: Context, field: FieldDescriptorProto): boolean {
@@ -422,11 +431,11 @@ export function isAnyValueType(field: FieldDescriptorProto): boolean {
 }
 
 export function isAnyValueTypeName(typeName: string): boolean {
-  return typeName === 'google.protobuf.Value' || typeName === '.google.protobuf.Value';
+  return typeName === "google.protobuf.Value" || typeName === ".google.protobuf.Value";
 }
 
 export function isBytesValueType(field: FieldDescriptorProto): boolean {
-  return field.typeName === '.google.protobuf.BytesValue';
+  return field.typeName === ".google.protobuf.BytesValue";
 }
 
 export function isFieldMaskType(field: FieldDescriptorProto): boolean {
@@ -434,7 +443,7 @@ export function isFieldMaskType(field: FieldDescriptorProto): boolean {
 }
 
 export function isFieldMaskTypeName(typeName: string): boolean {
-  return typeName === 'google.protobuf.FieldMask' || typeName === '.google.protobuf.FieldMask';
+  return typeName === "google.protobuf.FieldMask" || typeName === ".google.protobuf.FieldMask";
 }
 
 export function isListValueType(field: FieldDescriptorProto): boolean {
@@ -442,7 +451,7 @@ export function isListValueType(field: FieldDescriptorProto): boolean {
 }
 
 export function isListValueTypeName(typeName: string): boolean {
-  return typeName === 'google.protobuf.ListValue' || typeName === '.google.protobuf.ListValue';
+  return typeName === "google.protobuf.ListValue" || typeName === ".google.protobuf.ListValue";
 }
 
 export function isStructType(field: FieldDescriptorProto): boolean {
@@ -450,40 +459,54 @@ export function isStructType(field: FieldDescriptorProto): boolean {
 }
 
 export function isStructTypeName(typeName: string): boolean {
-  return typeName === 'google.protobuf.Struct' || typeName === '.google.protobuf.Struct';
+  return typeName === "google.protobuf.Struct" || typeName === ".google.protobuf.Struct";
 }
 
 export function isLongValueType(field: FieldDescriptorProto): boolean {
-  return field.typeName === '.google.protobuf.Int64Value' || field.typeName === '.google.protobuf.UInt64Value';
+  return field.typeName === ".google.protobuf.Int64Value" || field.typeName === ".google.protobuf.UInt64Value";
 }
 
 export function isEmptyType(typeName: string): boolean {
-  return typeName === '.google.protobuf.Empty';
+  return typeName === ".google.protobuf.Empty";
 }
 
 export function valueTypeName(ctx: Context, typeName: string): Code | undefined {
   switch (typeName) {
-    case '.google.protobuf.StringValue':
+    case ".google.protobuf.StringValue":
       return code`string`;
-    case '.google.protobuf.Int32Value':
-    case '.google.protobuf.UInt32Value':
-    case '.google.protobuf.DoubleValue':
-    case '.google.protobuf.FloatValue':
+    case ".google.protobuf.Int32Value":
+    case ".google.protobuf.UInt32Value":
+    case ".google.protobuf.DoubleValue":
+    case ".google.protobuf.FloatValue":
       return code`number`;
-    case '.google.protobuf.Int64Value':
-    case '.google.protobuf.UInt64Value':
+    case ".google.protobuf.Int64Value":
+    case ".google.protobuf.UInt64Value":
       // return options ? longTypeName(options) : code`number`;
       return longTypeName(ctx);
-    case '.google.protobuf.BoolValue':
+    case ".google.protobuf.BoolValue":
       return code`boolean`;
-    case '.google.protobuf.BytesValue':
-      return ctx.options.env === EnvOption.NODE ? code`Buffer` : code`Uint8Array`;
-    case '.google.protobuf.ListValue':
-      return code`Array<any>`;
-    case '.google.protobuf.Value':
+    case ".google.protobuf.BytesValue":
+      return ctx.options.env === EnvOption.NODE
+        ? code`Buffer`
+        : ctx.options.useJsonWireFormat
+        ? code`string`
+        : code`Uint8Array`;
+    case ".google.protobuf.ListValue":
+      return ctx.options.useReadonlyTypes ? code`ReadonlyArray<any>` : code`Array<any>`;
+    case ".google.protobuf.Value":
       return code`any`;
-    case '.google.protobuf.Struct':
-      return code`{[key: string]: any}`;
+    case ".google.protobuf.Struct":
+      return ctx.options.useReadonlyTypes ? code`{readonly [key: string]: any}` : code`{[key: string]: any}`;
+    case ".google.protobuf.FieldMask":
+      return ctx.options.useJsonWireFormat
+        ? code`string`
+        : ctx.options.useReadonlyTypes
+        ? code`readonly string[]`
+        : code`string[]`;
+    case ".google.protobuf.Duration":
+      return ctx.options.useJsonWireFormat ? code`string` : undefined;
+    case ".google.protobuf.Timestamp":
+      return ctx.options.useJsonWireFormat ? code`string` : undefined;
     default:
       return undefined;
   }
@@ -491,19 +514,19 @@ export function valueTypeName(ctx: Context, typeName: string): Code | undefined 
 
 export function wrapperTypeName(typeName: string): string | undefined {
   switch (typeName) {
-    case '.google.protobuf.StringValue':
-    case '.google.protobuf.Int32Value':
-    case '.google.protobuf.UInt32Value':
-    case '.google.protobuf.DoubleValue':
-    case '.google.protobuf.FloatValue':
-    case '.google.protobuf.Int64Value':
-    case '.google.protobuf.UInt64Value':
-    case '.google.protobuf.BoolValue':
-    case '.google.protobuf.BytesValue':
-    case '.google.protobuf.ListValue':
-    case '.google.protobuf.Timestamp':
-    case '.google.protobuf.Struct':
-      return typeName.split('.')[3];
+    case ".google.protobuf.StringValue":
+    case ".google.protobuf.Int32Value":
+    case ".google.protobuf.UInt32Value":
+    case ".google.protobuf.DoubleValue":
+    case ".google.protobuf.FloatValue":
+    case ".google.protobuf.Int64Value":
+    case ".google.protobuf.UInt64Value":
+    case ".google.protobuf.BoolValue":
+    case ".google.protobuf.BytesValue":
+    case ".google.protobuf.ListValue":
+    case ".google.protobuf.Timestamp":
+    case ".google.protobuf.Struct":
+      return typeName.split(".")[3];
     default:
       return undefined;
   }
@@ -515,6 +538,8 @@ function longTypeName(ctx: Context): Code {
     return code`${utils.Long}`;
   } else if (options.forceLong === LongOption.STRING) {
     return code`string`;
+  } else if (options.forceLong === LongOption.BIGINT) {
+    return code`bigint`;
   } else {
     return code`number`;
   }
@@ -538,15 +563,15 @@ export function messageToTypeName(
     if (
       !!typeOptions.repeated ||
       options.useOptionals === true ||
-      options.useOptionals === 'messages' ||
-      options.useOptionals === 'all'
+      options.useOptionals === "messages" ||
+      options.useOptionals === "all"
     ) {
       return valueType;
     }
     return code`${valueType} | undefined`;
   }
   // Look for other special prototypes like Timestamp that aren't technically wrapper types
-  if (!typeOptions.keepValueType && protoType === '.google.protobuf.Timestamp') {
+  if (!typeOptions.keepValueType && protoType === ".google.protobuf.Timestamp") {
     if (options.useDate == DateOption.DATE) {
       return code`Date`;
     }
@@ -557,7 +582,7 @@ export function messageToTypeName(
   }
 
   // need to use endsWith instead of === because objectid could be imported from an external proto file
-  if (!typeOptions.keepValueType && options.useMongoObjectId && protoType.endsWith('.ObjectId')) {
+  if (!typeOptions.keepValueType && options.useMongoObjectId && protoType.endsWith(".ObjectId")) {
     return code`mongodb.ObjectId`;
   }
   const [module, type] = toModuleAndType(typeMap, protoType);
@@ -581,7 +606,13 @@ export function toTypeName(ctx: Context, messageDesc: DescriptorProto, field: Fi
     const mapType = detectMapType(ctx, messageDesc, field);
     if (mapType) {
       const { keyType, valueType } = mapType;
+      if (ctx.options.useMapType) {
+        return code`Map<${keyType}, ${valueType}>`;
+      }
       return code`{ [key: ${keyType} ]: ${valueType} }`;
+    }
+    if (ctx.options.useReadonlyTypes) {
+      return code`readonly ${type}[]`;
     }
     return code`${type}[]`;
   }
@@ -607,7 +638,7 @@ export function toTypeName(ctx: Context, messageDesc: DescriptorProto, field: Fi
   if (
     (!isWithinOneOf(field) &&
       isMessage(field) &&
-      (options.useOptionals === false || options.useOptionals === 'none')) ||
+      (options.useOptionals === false || options.useOptionals === "none")) ||
     (isWithinOneOf(field) && options.oneof === OneofOption.PROPERTIES) ||
     (isWithinOneOf(field) && field.proto3Optional)
   ) {
@@ -621,7 +652,15 @@ export function detectMapType(
   ctx: Context,
   messageDesc: DescriptorProto,
   fieldDesc: FieldDescriptorProto
-): { messageDesc: DescriptorProto; keyType: Code; valueType: Code } | undefined {
+):
+  | {
+      messageDesc: DescriptorProto;
+      keyField: FieldDescriptorProto;
+      keyType: Code;
+      valueField: FieldDescriptorProto;
+      valueType: Code;
+    }
+  | undefined {
   const { typeMap } = ctx;
   if (
     fieldDesc.label === FieldDescriptorProto_Label.LABEL_REPEATED &&
@@ -629,36 +668,57 @@ export function detectMapType(
   ) {
     const mapType = typeMap.get(fieldDesc.typeName)![2] as DescriptorProto;
     if (!mapType.options?.mapEntry) return undefined;
-    const keyType = toTypeName(ctx, messageDesc, mapType.field[0]);
+    const [keyField, valueField] = mapType.field;
+    const keyType = toTypeName(ctx, messageDesc, keyField);
     // use basicTypeName because we don't need the '| undefined'
-    const valueType = basicTypeName(ctx, mapType.field[1]);
-    return { messageDesc: mapType, keyType, valueType };
+    const valueType = basicTypeName(ctx, valueField);
+    return { messageDesc: mapType, keyField, keyType, valueField, valueType };
   }
   return undefined;
 }
 
-export function rawRequestType(ctx: Context, methodDesc: MethodDescriptorProto): Code {
-  return messageToTypeName(ctx, methodDesc.inputType);
+export function rawRequestType(
+  ctx: Context,
+  methodDesc: MethodDescriptorProto,
+  typeOptions: { keepValueType?: boolean; repeated?: boolean } = {}
+): Code {
+  return messageToTypeName(ctx, methodDesc.inputType, typeOptions);
 }
 
-export function requestType(ctx: Context, methodDesc: MethodDescriptorProto): Code {
-  let typeName = rawRequestType(ctx, methodDesc);
+export function observableType(ctx: Context): Code {
+  if (ctx.options.useAsyncIterable) {
+    return code`AsyncIterable`;
+  }
+  return code`${imp("Observable@rxjs")}`;
+}
+
+export function requestType(ctx: Context, methodDesc: MethodDescriptorProto, partial: boolean = false): Code {
+  let typeName = rawRequestType(ctx, methodDesc, { keepValueType: true });
+
+  if (partial) {
+    typeName = code`${ctx.utils.DeepPartial}<${typeName}>`;
+  }
+
   if (methodDesc.clientStreaming) {
-    return code`${imp('Observable@rxjs')}<${typeName}>`;
+    return code`${observableType(ctx)}<${typeName}>`;
   }
   return typeName;
 }
 
-export function responseType(ctx: Context, methodDesc: MethodDescriptorProto): Code {
+export function responseType(
+  ctx: Context,
+  methodDesc: MethodDescriptorProto,
+  typeOptions: { keepValueType?: boolean; repeated?: boolean } = {}
+): Code {
   return messageToTypeName(ctx, methodDesc.outputType, { keepValueType: true });
 }
 
 export function responsePromise(ctx: Context, methodDesc: MethodDescriptorProto): Code {
-  return code`Promise<${responseType(ctx, methodDesc)}>`;
+  return code`Promise<${responseType(ctx, methodDesc, { keepValueType: true })}>`;
 }
 
 export function responseObservable(ctx: Context, methodDesc: MethodDescriptorProto): Code {
-  return code`${imp('Observable@rxjs')}<${responseType(ctx, methodDesc)}>`;
+  return code`${observableType(ctx)}<${responseType(ctx, methodDesc, { keepValueType: true })}>`;
 }
 
 export function responsePromiseOrObservable(ctx: Context, methodDesc: MethodDescriptorProto): Code {
@@ -688,7 +748,7 @@ export function detectBatchMethod(
   methodDesc: MethodDescriptorProto
 ): BatchMethod | undefined {
   const { typeMap } = ctx;
-  const nameMatches = methodDesc.name.startsWith('Batch');
+  const nameMatches = methodDesc.name.startsWith("Batch");
   const inputType = typeMap.get(methodDesc.inputType);
   const outputType = typeMap.get(methodDesc.outputType);
   if (nameMatches && inputType && outputType) {
@@ -696,7 +756,7 @@ export function detectBatchMethod(
     const inputTypeDesc = inputType[2] as DescriptorProto;
     const outputTypeDesc = outputType[2] as DescriptorProto;
     if (hasSingleRepeatedField(inputTypeDesc) && hasSingleRepeatedField(outputTypeDesc)) {
-      const singleMethodName = methodDesc.name.replace('Batch', 'Get');
+      const singleMethodName = methodDesc.name.replace("Batch", "Get");
       const inputFieldName = inputTypeDesc.field[0].name;
       const inputType = basicTypeName(ctx, inputTypeDesc.field[0]); // e.g. repeated string -> string
       const outputFieldName = outputTypeDesc.field[0].name;

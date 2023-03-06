@@ -1,8 +1,7 @@
 /* eslint-disable */
-import { util, configure, Writer, Reader } from 'protobufjs/minimal';
-import * as Long from 'long';
+import * as _m0 from "protobufjs/minimal";
 
-export const protobufPackage = 'google.protobuf';
+export const protobufPackage = "google.protobuf";
 
 /**
  * `FieldMask` represents a set of symbolic field paths, for example:
@@ -38,7 +37,6 @@ export const protobufPackage = 'google.protobuf';
  * The result will not contain specific values for fields x,y and z
  * (their value will be set to the default, and omitted in proto text
  * output):
- *
  *
  *     f {
  *       a : 22
@@ -215,15 +213,15 @@ function createBaseFieldMask(): FieldMask {
 }
 
 export const FieldMask = {
-  encode(message: FieldMask, writer: Writer = Writer.create()): Writer {
+  encode(message: FieldMask, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     for (const v of message.paths) {
       writer.uint32(10).string(v!);
     }
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): FieldMask {
-    const reader = input instanceof Reader ? input : new Reader(input);
+  decode(input: _m0.Reader | Uint8Array, length?: number): FieldMask {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseFieldMask();
     while (reader.pos < end) {
@@ -242,18 +240,20 @@ export const FieldMask = {
 
   fromJSON(object: any): FieldMask {
     return {
-      paths: Array.isArray(object?.paths) ? object.paths.map((e: any) => String(e)) : [],
+      paths: typeof (object) === "string"
+        ? object.split(",").filter(Boolean)
+        : Array.isArray(object?.paths)
+        ? object.paths.map(String)
+        : [],
     };
   },
 
-  toJSON(message: FieldMask): unknown {
-    const obj: any = {};
-    if (message.paths) {
-      obj.paths = message.paths.map((e) => e);
-    } else {
-      obj.paths = [];
-    }
-    return obj;
+  toJSON(message: FieldMask): string {
+    return message.paths.join(",");
+  },
+
+  create<I extends Exact<DeepPartial<FieldMask>, I>>(base?: I): FieldMask {
+    return FieldMask.fromPartial(base ?? {});
   },
 
   fromPartial<I extends Exact<DeepPartial<FieldMask>, I>>(object: I): FieldMask {
@@ -261,28 +261,25 @@ export const FieldMask = {
     message.paths = object.paths?.map((e) => e) || [];
     return message;
   },
+
+  wrap(paths: string[]): FieldMask {
+    const result = createBaseFieldMask();
+    result.paths = paths;
+    return result;
+  },
+
+  unwrap(message: FieldMask): string[] {
+    return message.paths;
+  },
 };
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 
-export type DeepPartial<T> = T extends Builtin
-  ? T
-  : T extends Array<infer U>
-  ? Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U>
-  ? ReadonlyArray<DeepPartial<U>>
-  : T extends {}
-  ? { [K in keyof T]?: DeepPartial<T[K]> }
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
 
 type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin
-  ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & Record<Exclude<keyof I, KeysOfUnion<P>>, never>;
-
-// If you get a compile-error about 'Constructor<Long> and ... have no overlap',
-// add '--ts_proto_opt=esModuleInterop=true' as a flag when calling 'protoc'.
-if (util.Long !== Long) {
-  util.Long = Long as any;
-  configure();
-}
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
